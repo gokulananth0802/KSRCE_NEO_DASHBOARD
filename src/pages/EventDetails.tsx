@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Calendar, Clock, MapPin, Users, Edit, Link, Trash2, Check, X, ChevronDown, ChevronUp, Download, MessageSquare, UserPlus, Mail, AlertTriangle, Laptop, FileText, MoreHorizontal, Plus } from 'lucide-react';
 import { useParams } from 'react-router-dom';
-const eventData = {
+const initialEventData = {
   id: '1',
   title: 'AI Workshop',
   date: '2023-07-11',
@@ -125,6 +125,113 @@ const EventDetails = () => {
   const [showAttendees, setShowAttendees] = useState(true);
   const [showResources, setShowResources] = useState(true);
   const [showAgenda, setShowAgenda] = useState(true);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [eventData, setEventData] = useState(initialEventData);
+
+  // Edit form state
+  const [editForm, setEditForm] = useState({
+    title: eventData.title,
+    description: eventData.description,
+    date: eventData.date,
+    time: eventData.time,
+    location: eventData.location,
+    capacity: eventData.capacity,
+    organizer: eventData.organizer,
+    type: eventData.type,
+    agenda: [...eventData.agenda],
+    resources: [...eventData.resources]
+  });
+
+  // Helper functions for edit form
+  const addAgendaItem = () => {
+    setEditForm(prev => ({
+      ...prev,
+      agenda: [...prev.agenda, { time: '', title: '', duration: '' }]
+    }));
+  };
+
+  const removeAgendaItem = (index: number) => {
+    setEditForm(prev => ({
+      ...prev,
+      agenda: prev.agenda.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateAgendaItem = (index: number, field: string, value: string) => {
+    setEditForm(prev => ({
+      ...prev,
+      agenda: prev.agenda.map((item, i) =>
+        i === index ? { ...item, [field]: value } : item
+      )
+    }));
+  };
+
+  const addResource = () => {
+    setEditForm(prev => ({
+      ...prev,
+      resources: [...prev.resources, {
+        id: Date.now().toString(),
+        name: '',
+        type: 'Equipment',
+        status: 'pending',
+        quantity: undefined
+      }]
+    }));
+  };
+
+  const removeResource = (index: number) => {
+    setEditForm(prev => ({
+      ...prev,
+      resources: prev.resources.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateResource = (index: number, field: string, value: string | number | undefined) => {
+    setEditForm(prev => ({
+      ...prev,
+      resources: prev.resources.map((item, i) =>
+        i === index ? { ...item, [field]: value } : item
+      )
+    }));
+  };
+
+  const openEditModal = () => {
+    // Reset form with current eventData
+    setEditForm({
+      title: eventData.title,
+      description: eventData.description,
+      date: eventData.date,
+      time: eventData.time,
+      location: eventData.location,
+      capacity: eventData.capacity,
+      organizer: eventData.organizer,
+      type: eventData.type,
+      agenda: [...eventData.agenda],
+      resources: [...eventData.resources]
+    });
+    setShowEditModal(true);
+  };
+
+  const handleSave = () => {
+    // Update eventData with editForm values
+    setEventData(prev => ({
+      ...prev,
+      title: editForm.title,
+      description: editForm.description,
+      date: editForm.date,
+      time: editForm.time,
+      location: editForm.location,
+      capacity: editForm.capacity,
+      organizer: editForm.organizer,
+      type: editForm.type,
+      agenda: [...editForm.agenda],
+      resources: [...editForm.resources]
+    }));
+
+    // Here you would typically save to backend
+    console.log('Saving event:', editForm);
+    setShowEditModal(false);
+  };
   return <div className="space-y-6">
       {/* Event header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between">
@@ -166,7 +273,10 @@ const EventDetails = () => {
             <Link size={16} className="mr-2" />
             Share
           </button>
-          <button className="flex items-center px-3 py-2 bg-white border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50">
+          <button
+            onClick={openEditModal}
+            className="flex items-center px-3 py-2 bg-white border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50"
+          >
             <Edit size={16} className="mr-2" />
             Edit Event
           </button>
@@ -646,6 +756,262 @@ const EventDetails = () => {
             </div>
           </div>}
       </div>
+
+      {/* Edit Event Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">Edit Event</h2>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Basic Event Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Event Title
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.title}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Event Type
+                  </label>
+                  <select
+                    value={editForm.type}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, type: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="Workshop">Workshop</option>
+                    <option value="Presentation">Presentation</option>
+                    <option value="Seminar">Seminar</option>
+                    <option value="Hackathon">Hackathon</option>
+                    <option value="Networking">Networking</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Date
+                  </label>
+                  <input
+                    type="date"
+                    value={editForm.date}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, date: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Time
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.time}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, time: e.target.value }))}
+                    placeholder="e.g., 10:00 AM - 12:00 PM"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Location
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.location}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, location: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Capacity
+                  </label>
+                  <input
+                    type="number"
+                    value={editForm.capacity}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      const numValue = value === '' ? 0 : parseInt(value);
+                      setEditForm(prev => ({ ...prev, capacity: numValue }));
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Organizer
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.organizer}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, organizer: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Event Description
+                </label>
+                <textarea
+                  value={editForm.description}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Agenda Section */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-medium text-gray-900">Agenda</h3>
+                  <button
+                    onClick={addAgendaItem}
+                    className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  >
+                    <Plus size={16} className="mr-2" />
+                    Add Item
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {editForm.agenda.map((item, index) => (
+                    <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-md">
+                      <input
+                        type="text"
+                        value={item.time}
+                        onChange={(e) => updateAgendaItem(index, 'time', e.target.value)}
+                        placeholder="Time"
+                        className="w-24 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                      <input
+                        type="text"
+                        value={item.title}
+                        onChange={(e) => updateAgendaItem(index, 'title', e.target.value)}
+                        placeholder="Title"
+                        className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                      <input
+                        type="text"
+                        value={item.duration}
+                        onChange={(e) => updateAgendaItem(index, 'duration', e.target.value)}
+                        placeholder="Duration"
+                        className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                      <button
+                        onClick={() => removeAgendaItem(index)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Resources Section */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-medium text-gray-900">Resources</h3>
+                  <button
+                    onClick={addResource}
+                    className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  >
+                    <Plus size={16} className="mr-2" />
+                    Add Resource
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {editForm.resources.map((resource, index) => (
+                    <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-md">
+                      <input
+                        type="text"
+                        value={resource.name}
+                        onChange={(e) => updateResource(index, 'name', e.target.value)}
+                        placeholder="Resource name"
+                        className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                      <select
+                        value={resource.type}
+                        onChange={(e) => updateResource(index, 'type', e.target.value)}
+                        className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      >
+                        <option value="Room">Room</option>
+                        <option value="Equipment">Equipment</option>
+                      </select>
+                      <input
+                        type="number"
+                        value={resource.quantity || ''}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          const numValue = value === '' ? undefined : parseInt(value);
+                          updateResource(index, 'quantity', numValue);
+                        }}
+                        placeholder="Qty"
+                        className="w-16 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                      <select
+                        value={resource.status}
+                        onChange={(e) => updateResource(index, 'status', e.target.value)}
+                        className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
+                      <button
+                        onClick={() => removeResource(index)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200">
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         .toggle-checkbox:checked {
           right: 0;

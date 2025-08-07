@@ -2,89 +2,100 @@ import { useState, useEffect } from 'react';
 import { Search, Filter, Plus, Users, ChevronDown, UserCheck, Mail, MoreHorizontal, FileText, Calendar, BarChart2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import * as XLSX from 'xlsx';
-const peopleData = [{
-  id: '1',
-  name: 'Sarah Chen',
-  email: 'schen@university.edu',
-  department: 'Computer Science',
-  role: 'Student',
-  projects: ['AI for Sustainable Agriculture'],
-  skills: ['Machine Learning', 'Python', 'Data Analysis'],
-  image: 'https://randomuser.me/api/portraits/women/12.jpg'
-}, {
-  id: '2',
-  name: 'Dr. James Wilson',
-  email: 'jwilson@university.edu',
-  department: 'Electrical Engineering',
-  role: 'Mentor',
-  projects: ['Quantum Computing Applications', 'Smart City Solutions'],
-  skills: ['Quantum Computing', 'Circuit Design', 'IoT'],
-  image: 'https://randomuser.me/api/portraits/men/32.jpg'
-}, {
-  id: '3',
-  name: 'Mike Johnson',
-  email: 'mjohnson@university.edu',
-  department: 'Environmental Science',
-  role: 'Student',
-  projects: ['AI for Sustainable Agriculture'],
-  skills: ['Sustainability', 'Agriculture', 'Research'],
-  image: 'https://randomuser.me/api/portraits/men/45.jpg'
-}, {
-  id: '4',
-  name: 'Prof. Maria Garcia',
-  email: 'mgarcia@university.edu',
-  department: 'Computer Science',
-  role: 'Mentor',
-  projects: ['Smart City Solutions'],
-  skills: ['Urban Planning', 'Data Science', 'IoT'],
-  image: 'https://randomuser.me/api/portraits/women/68.jpg'
-}, {
-  id: '5',
-  name: 'Alex Kumar',
-  email: 'akumar@university.edu',
-  department: 'Mechanical Engineering',
-  role: 'Student',
-  projects: ['Smart City Solutions'],
-  skills: ['CAD', '3D Printing', 'Robotics'],
-  image: 'https://randomuser.me/api/portraits/men/67.jpg'
-}, {
-  id: '6',
-  name: 'Lisa Wong',
-  email: 'lwong@university.edu',
-  department: 'Business',
-  role: 'Student',
-  projects: ['Smart City Solutions'],
-  skills: ['Project Management', 'Marketing', 'Finance'],
-  image: 'https://randomuser.me/api/portraits/women/55.jpg'
-}, {
-  id: '7',
-  name: 'Dr. Robert Chen',
-  email: 'rchen@university.edu',
-  department: 'Chemistry',
-  role: 'Mentor',
-  projects: ['Biodegradable Plastics'],
-  skills: ['Polymer Science', 'Sustainability', 'Material Science'],
-  image: 'https://randomuser.me/api/portraits/men/22.jpg'
-}, {
-  id: '8',
-  name: 'Emma Lewis',
-  email: 'elewis@university.edu',
-  department: 'Chemistry',
-  role: 'Student',
-  projects: ['Biodegradable Plastics'],
-  skills: ['Analytical Chemistry', 'Lab Work', 'Research'],
-  image: 'https://randomuser.me/api/portraits/women/33.jpg'
-}];
 
-export interface FormEntry {
+
+// Student interface - with flexible field names
+export interface StudentEntry {
   Timestamp: number;
-  Name: string;
-  'Designation ': string;
-  Department: string;
-  Skills: string;
-  Projects: string;
-  Portfolio: string;
-  Mobile: string;
+  'Full Name ': string;
+  'Email Address': string;
+  'Phone Number': number;
+  'Phone Number ': number;
+  '"Phone Number "': number;
+  '"Phone Number"': number;
+  'Contact Number': string | number;
+  'Contact Number ': string | number;
+  '"Contact Number "': string | number;
+  '"Contact Number"': string | number;
+  'City / Location': string;
+  // Possible skill field variations
+  Skills?: string;
+  Skill?: string;
+  skills?: string;
+  skill?: string;
+  Expertise?: string;
+  expertise?: string;
+  // Possible project field variations
+  Projects?: string;
+  Project?: string;
+  projects?: string;
+  project?: string;
+  Work?: string;
+  work?: string;
+  Portfolio?: string;
+  'Years of Professional Experience '?: string | number;
+  '"Years of Professional Experience "'?: string | number;
+  [key: string]: any; // Allow any additional fields
+}
+
+// Mentor interface - with flexible field names
+export interface MentorEntry {
+  Timestamp: number;
+  'Full Name': string;
+  'Email Address': string;
+  'Contact Number': string | number;
+  'Contact Number ': string | number;
+  '"Contact Number "': string | number;
+  '"Contact Number"': string | number;
+  'City/ Location': string;
+  // Possible skill field variations
+  Skills?: string;
+  Skill?: string;
+  skills?: string;
+  skill?: string;
+  Expertise?: string;
+  expertise?: string;
+  // Possible experience field variations
+  Experience?: string;
+  experience?: string;
+  'Work Experience'?: string;
+  'work experience'?: string;
+  Background?: string;
+  background?: string;
+  'Years of Professional Experience '?: string | number;
+  '"Years of Professional Experience "'?: string | number;
+  'Professional Experience'?: string;
+  'professional experience'?: string;
+  [key: string]: any; // Allow any additional fields
+}
+
+// Corporate Partner interface - with flexible field names
+export interface CorporatePartnerEntry {
+  Timestamp: number;
+  'Organization Name': string;
+  'Website / LinkedIn Page ': string;
+  'Location / Head Office ': string;
+  'Your Name ': string;
+  'Contact Email': string;
+  'Phone Number': string | number;
+  'Phone Number ': string | number;
+  '"Phone Number "': string | number;
+  '"Phone Number"': string | number;
+  'Contact Number': string | number;
+  'Contact Number ': string | number;
+  '"Contact Number "': string | number;
+  '"Contact Number"': string | number;
+  // Possible info field variations
+  'Brief about your interest in this partnership '?: string;
+  '"Brief about your interest in this partnership "': string;
+  'Brief about your interest in this partnership'?: string;
+  'Company Info'?: string;
+  'company info'?: string;
+  Description?: string;
+  description?: string;
+  About?: string;
+  about?: string;
+  [key: string]: any; // Allow any additional fields
 }
 
 const People = () => {
@@ -93,18 +104,14 @@ const People = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('All');
   const [showFilters, setShowFilters] = useState(false);
-  const filteredPeople = peopleData.filter(person => {
-    const matchesSearch = person.name.toLowerCase().includes(searchTerm.toLowerCase()) || person.email.toLowerCase().includes(searchTerm.toLowerCase()) || person.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesRole = activeTab === 'students' && person.role === 'Student' || activeTab === 'mentors' && person.role === 'Mentor' || activeTab === 'partners' && person.role === 'Corporate Partner';
-    const matchesDepartment = departmentFilter === 'All' || person.department === departmentFilter;
-    return matchesSearch && matchesRole && matchesDepartment;
-  });
-  const departments = [...new Set(peopleData.map(person => person.department))];
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
 
     const [profileCollections, setProfileCollections] = useState<{
-    students: FormEntry[];
-    mentors: FormEntry[];
-    corporatePartners: FormEntry[];
+    students: StudentEntry[];
+    mentors: MentorEntry[];
+    corporatePartners: CorporatePartnerEntry[];
   }>({
     students: [],
     mentors: [],
@@ -114,64 +121,234 @@ const People = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const SHEET_URL =
-          'https://docs.google.com/spreadsheets/d/1an81eaGBYlCnvTr65o1fih47Sfg504o6NKNP1wuV8GQ/export?format=xlsx';
-        const res = await fetch(SHEET_URL);
-        const buf = await res.arrayBuffer();
+        setLoading(true);
+        setError(null);
 
-        const wb = XLSX.read(buf, { type: 'array' });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const raw = XLSX.utils.sheet_to_json(ws, { defval: null }) as FormEntry[];
+        // URLs for different sheets
+        const STUDENTS_URL = 'https://docs.google.com/spreadsheets/d/1mamjHbZBVkoejh-NLFAi8fmHoSgLr8uNBNXETSeaFyI/export?format=xlsx';
+        const MENTORS_URL = 'https://docs.google.com/spreadsheets/d/1ftkH0v-RqTqHRg7_71A3VNYwsd6EP8WLmvm3sz8xnlU/export?format=xlsx';
+        const PARTNERS_URL = 'https://docs.google.com/spreadsheets/d/1mrbqOE9zx3ivykED0lbEU3WVTnk7p64ZPwej5yT25-Q/export?format=xlsx';
 
-        // Segregate profiles by designation
-        const students: FormEntry[] = [];
-        const mentors: FormEntry[] = [];
-        const corporatePartners: FormEntry[] = [];
+        // Fetch all three sheets in parallel
+        const [studentsRes, mentorsRes, partnersRes] = await Promise.all([
+          fetch(STUDENTS_URL),
+          fetch(MENTORS_URL),
+          fetch(PARTNERS_URL)
+        ]);
 
-        raw.forEach(entry => {
-          const designation = entry['Designation ']?.trim().toLowerCase();
-          switch (designation) {
-            case 'student':
-              students.push(entry);
-              break;
-            case 'mentor':
-              mentors.push(entry);
-              break;
-            case 'corporate partner':
-            case 'corporate':
-            case 'partner':
-              corporatePartners.push(entry);
-              break;
-            default:
-              // you may choose to handle unexpected designations here
-              break;
-          }
-        });
+        if (!studentsRes.ok || !mentorsRes.ok || !partnersRes.ok) {
+          throw new Error('Failed to fetch one or more sheets');
+        }
+
+        // Process students data
+        const studentsBuffer = await studentsRes.arrayBuffer();
+        const studentsWb = XLSX.read(studentsBuffer, { type: 'array' });
+        const studentsWs = studentsWb.Sheets[studentsWb.SheetNames[0]];
+        const students = XLSX.utils.sheet_to_json(studentsWs, { defval: null }) as StudentEntry[];
+
+        // Process mentors data
+        const mentorsBuffer = await mentorsRes.arrayBuffer();
+        const mentorsWb = XLSX.read(mentorsBuffer, { type: 'array' });
+        const mentorsWs = mentorsWb.Sheets[mentorsWb.SheetNames[0]];
+        const mentors = XLSX.utils.sheet_to_json(mentorsWs, { defval: null }) as MentorEntry[];
+
+        // Process corporate partners data
+        const partnersBuffer = await partnersRes.arrayBuffer();
+        const partnersWb = XLSX.read(partnersBuffer, { type: 'array' });
+        const partnersWs = partnersWb.Sheets[partnersWb.SheetNames[0]];
+        const corporatePartners = XLSX.utils.sheet_to_json(partnersWs, { defval: null }) as CorporatePartnerEntry[];
 
         setProfileCollections({ students, mentors, corporatePartners });
         console.log('Profiles loaded:', { students, mentors, corporatePartners });
-        console.log('Profiles segregated:', { students, mentors, corporatePartners });
+
+        // Debug: Log the first entry of each type to see available fields
+        if (students.length > 0) {
+          console.log('Sample student data:', students[0]);
+          console.log('Student fields:', Object.keys(students[0]));
+        }
+        if (mentors.length > 0) {
+          console.log('Sample mentor data:', mentors[0]);
+          console.log('Mentor fields:', Object.keys(mentors[0]));
+        }
+        if (corporatePartners.length > 0) {
+          console.log('Sample partner data:', corporatePartners[0]);
+          console.log('Partner fields:', Object.keys(corporatePartners[0]));
+        }
       } catch (err) {
-        console.error('Error loading sheet:', err);
+        console.error('Error loading sheets:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load data');
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchData();
   }, []);
 
-  const getProfiles = () => {
+  // Helper functions to get name and email from different data types
+  const getName = (person: StudentEntry | MentorEntry | CorporatePartnerEntry): string => {
+    if ('Full Name ' in person) return person['Full Name '];
+    if ('Full Name' in person) return person['Full Name'];
+    if ('Your Name ' in person) return person['Your Name '];
+    return 'Unknown';
+  };
+
+  const getEmail = (person: StudentEntry | MentorEntry | CorporatePartnerEntry): string => {
+    if ('Email Address' in person) return person['Email Address'];
+    if ('Contact Email' in person) return person['Contact Email'];
+    return 'No email';
+  };
+
+  const getLocation = (person: StudentEntry | MentorEntry | CorporatePartnerEntry): string => {
+    if ('City / Location' in person) return person['City / Location'];
+    if ('City/ Location' in person) return person['City/ Location'];
+    if ('Location / Head Office ' in person) return person['Location / Head Office '];
+    return 'Unknown';
+  };
+
+  // Helper function to get contact/phone number from any available field
+  const getContactNumber = (person: StudentEntry | MentorEntry | CorporatePartnerEntry): string => {
+    const contactFields = [
+      'Contact Number ',
+      'Contact Number',
+      'Phone Number',
+      'Phone Number ',
+      'phone number',
+      'contact number',
+      'Mobile Number',
+      'mobile number',
+      'Mobile',
+      'mobile'
+    ];
+
+    return findFieldValue(person, contactFields);
+  };
+
+  // Helper function to get skills from any available field
+  const getSkills = (person: StudentEntry | MentorEntry | CorporatePartnerEntry): string => {
+    // Check for common skill field names
+    const skillFields = [
+      'Skills',
+      'Skill',
+      'skills',
+      'skill',
+      'Area(s) of Expertise',
+      'Area of Expertise',
+      'expertise',
+      'Specialization',
+      'specialization'
+    ];
+
+    return findFieldValue(person, skillFields);
+  };
+
+  // Helper function to find field value with flexible matching
+  const findFieldValue = (person: any, fieldNames: string[]): string => {
+    for (const fieldName of fieldNames) {
+      // Try exact match first
+      if (fieldName in person && person[fieldName]) {
+        return String(person[fieldName]);
+      }
+
+      // Try to find field with or without quotes
+      const withoutQuotes = fieldName.replace(/"/g, '');
+      const withQuotes = `"${withoutQuotes}"`;
+
+      if (withoutQuotes in person && person[withoutQuotes]) {
+        return String(person[withoutQuotes]);
+      }
+
+      if (withQuotes in person && person[withQuotes]) {
+        return String(person[withQuotes]);
+      }
+    }
+    return '';
+  };
+
+  // Helper function to get projects/experience from any available field
+  const getProjectsOrExperience = (person: StudentEntry | MentorEntry | CorporatePartnerEntry): string => {
+    // For students, look for project fields
+    console.log("Person:", person);
+    if (activeTab === 'students') {
+      const projectFields = [
+        'Years of Professional Experience ',
+        'Years of Professional Experience',
+        'Projects',
+        'Project',
+        'projects',
+        'project',
+        'Work',
+        'work'
+      ];
+      return findFieldValue(person, projectFields);
+    }
+
+    // For mentors, look for experience fields
+    if (activeTab === 'mentors') {
+      const experienceFields = [
+        'Years of Professional Experience ',
+        'Years of Professional Experience',
+        'Experience',
+        'experience',
+        'Work Experience',
+        'work experience',
+        'Background',
+        'background',
+        'Professional Experience',
+        'professional experience'
+      ];
+      return findFieldValue(person, experienceFields);
+    }
+
+    // For partners, look for company info
+    if (activeTab === 'partners') {
+      const infoFields = [
+        'Brief about your interest in this partnership ',
+        'Brief about your interest in this partnership',
+        'Company Info',
+        'company info',
+        'Description',
+        'description',
+        'About',
+        'about',
+        'Business Description',
+        'business description'
+      ];
+      return findFieldValue(person, infoFields);
+    }
+
+    return '';
+  };
+
+  const getProfiles = (): (StudentEntry | MentorEntry | CorporatePartnerEntry)[] => {
     switch (activeTab) {
-      case 'student':
+      case 'students':
         console.log('Fetching students:', profileCollections.students);
         return profileCollections.students || [];
-      case 'mentor':
+      case 'mentors':
         return profileCollections.mentors || [];
-      case 'corporatePartner':
+      case 'partners':
         return profileCollections.corporatePartners || [];
       default:
         return [];
     }
   };
+
+  // Get current profiles based on active tab
+  const currentProfiles = getProfiles();
+
+  const filteredPeople = currentProfiles.filter(person => {
+    const name = getName(person).toLowerCase();
+    const email = getEmail(person).toLowerCase();
+    const location = getLocation(person);
+
+    const matchesSearch = name.includes(searchTerm.toLowerCase()) ||
+                         email.includes(searchTerm.toLowerCase());
+    const matchesDepartment = departmentFilter === 'All' || location === departmentFilter;
+    return matchesSearch && matchesDepartment;
+  });
+
+  const departments = [...new Set(currentProfiles.map(person => getLocation(person)).filter(Boolean))];
   return <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -231,10 +408,10 @@ const People = () => {
           {showFilters && <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Department
+                  Location
                 </label>
                 <select className="border border-gray-300 rounded-md px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" value={departmentFilter} onChange={e => setDepartmentFilter(e.target.value)}>
-                  <option value="All">All Departments</option>
+                  <option value="All">All Locations</option>
                   {departments.map((dept, index) => <option key={index} value={dept}>
                       {dept}
                     </option>)}
@@ -258,95 +435,121 @@ const People = () => {
               </div>
             </div>}
         </div>
-        {/* People grid/table */}
-        {viewMode === 'grid' ? <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {getProfiles().map(person => (
+        {/* Loading and Error States */}
+        {loading ? (
+          <div className="p-8 text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p className="mt-2 text-gray-500">Loading people...</p>
+          </div>
+        ) : error ? (
+          <div className="p-8 text-center">
+            <div className="text-red-600 mb-2">
+              <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 19.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <p className="text-red-600 font-medium">Error loading data</p>
+            <p className="text-gray-500 text-sm mt-1">{error}</p>
+          </div>
+        ) : filteredPeople.length === 0 ? (
+          <div className="p-8 text-center">
+            <div className="text-gray-400 mb-2">
+              <Users className="mx-auto h-12 w-12" />
+            </div>
+            <p className="text-gray-500 font-medium">No people found</p>
+            <p className="text-gray-400 text-sm mt-1">
+              {searchTerm ? 'Try adjusting your search criteria' : `No ${activeTab} available`}
+            </p>
+          </div>
+        ) : (
+        /* People grid/table */
+        viewMode === 'grid' ? <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredPeople.map(person => (
               <div
-                key={person.Timestamp /* or whatever unique key they have */}
-                className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                key={person.Timestamp}
+                className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1"
               >
-                <div className="p-4">
-                  <div className="flex items-center">
-                    <img
-                      // src={person.image || person['Upload PPT/PDF'] /* fallback if no image */}
-                      // alt={person.name || person.Name}
-                      // className="w-16 h-16 rounded-full object-cover"
-                    />
-                    <div className="ml-3">
-                        {person.Name}
-                      <p className="text-sm text-gray-500">
-                        {person.Department}
-                      </p>
-                      <span
-                        className={
-                          `inline-block mt-1 px-2 py-1 text-xs font-medium rounded-full ` +
-                          (person['Designation '] === 'Student'
-                            ? 'bg-blue-100 text-blue-800'
-                            : person['Designation '] === 'Mentor'
-                            ? 'bg-purple-100 text-purple-800'
-                            : 'bg-amber-100 text-amber-800')
-                        }
-                      >
-                        {person['Designation ']}
-                      </span>
+                <div className="p-5">
+                  <div className="space-y-3">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        {getName(person).trim()}
+                      </h3>
+                      <div className="grid grid-cols-1 gap-2">
+                        <div className="flex items-center text-sm text-gray-600">
+                          <span className="w-4 text-center mr-2">📍</span>
+                          <span className="flex-1">{getLocation(person)}</span>
+                        </div>
+                        <div className="flex items-center text-sm text-gray-600">
+                          <span className="w-4 text-center mr-2">✉️</span>
+                          <span className="flex-1 break-all">{getEmail(person)}</span>
+                        </div>
+                        {(activeTab === 'students' || activeTab === 'mentors') && getContactNumber(person) && (
+                          <div className="flex items-center text-sm text-gray-600">
+                            <span className="w-4 text-center mr-2">📞</span>
+                            <span className="flex-1">{getContactNumber(person)}</span>
+                          </div>
+                        )}
+                        {activeTab === 'partners' && 'Organization Name' in person && (
+                          <div className="flex items-center text-sm font-medium text-blue-600">
+                            <span className="w-4 text-center mr-2">🏢</span>
+                            <span className="flex-1">{person['Organization Name']}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
                   {/* Skills */}
-                  {'skills' in person && (
-                    <div className="mt-4">
-                      <h4 className="text-xs font-medium uppercase text-gray-500">
+                  {getSkills(person) && (
+                    <div className="mt-6">
+                      <h4 className="text-xs font-medium uppercase text-gray-500 mb-2">
                         Skills
                       </h4>
-                      {/* <div className="mt-1 flex flex-wrap gap-1">
-                        {person.skills.slice(0, 3).map((skill, i) => (
-                          <span
-                            key={i}
-                            className="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded"
-                          >
-                            {skill}
-                          </span>
-                        ))}
-                        {person.skills.length > 3 && (
-                          <span className="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded">
-                            +{person.skills.length - 3}
-                          </span>
-                        )}
-                      </div> */}
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <p className="text-sm text-gray-700">
+                          {getSkills(person)}
+                        </p>
+                      </div>
                     </div>
                   )}
 
-                  {/* Projects */}
-                  {'projects' in person && (
-                    <div className="mt-3">
-                      <h4 className="text-xs font-medium uppercase text-gray-500">
-                        Projects
+                  {/* Projects/Experience */}
+                  {getProjectsOrExperience(person) && (
+                    <div className="mt-4">
+                      <h4 className="text-xs font-medium uppercase text-gray-500 mb-2">
+                        {activeTab === 'students' ? 'Projects' : activeTab === 'mentors' ? 'Experience' : 'Info'}
                       </h4>
-                      <div className="mt-1">
-                        {/* {person.projects.length > 0 ? (
-                          <div className="text-sm text-blue-600 hover:underline cursor-pointer">
-                            {person.projects[0]}
-                            {person.projects.length > 1
-                              ? ` +${person.projects.length - 1} more`
-                              : ''}
-                          </div>
-                        ) : (
-                          <div className="text-sm text-gray-500 italic">
-                            No active projects
-                          </div>
-                        )} */}
+                      <div className={`${activeTab === 'students' ? 'bg-blue-50' : activeTab === 'mentors' ? 'bg-green-50' : 'bg-purple-50'} rounded-lg p-3`}>
+                        <p className={`text-sm ${activeTab === 'students' ? 'text-blue-700' : activeTab === 'mentors' ? 'text-green-700' : 'text-purple-700'}`}>
+                          {getProjectsOrExperience(person)}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Website - only for corporate partners */}
+                  {activeTab === 'partners' && 'Website / LinkedIn Page ' in person && person['Website / LinkedIn Page '] && (
+                    <div className="mt-4">
+                      <h4 className="text-xs font-medium uppercase text-gray-500 mb-2">
+                        Website
+                      </h4>
+                      <div className="bg-green-50 rounded-lg p-3">
+                        <a href={person['Website / LinkedIn Page ']} target="_blank" rel="noopener noreferrer" className="text-sm text-green-600 hover:text-green-800 underline break-all">
+                          {person['Website / LinkedIn Page ']}
+                        </a>
                       </div>
                     </div>
                   )}
 
                   {/* Actions */}
-                  <div className="mt-4 flex justify-between">
-                    <button className="text-blue-600 hover:text-blue-800 flex items-center text-sm">
-                      <FileText size={14} className="mr-1" />
+                  <div className="mt-6 pt-4 border-t border-gray-100 flex justify-between">
+                    <button className="bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 px-3 py-2 rounded-lg flex items-center text-sm font-medium transition-colors">
+                      <FileText size={14} className="mr-2" />
                       Profile
                     </button>
-                    <button className="text-gray-600 hover:text-gray-800 flex items-center text-sm">
-                      <Mail size={14} className="mr-1" />
+                    <button className="bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-700 px-3 py-2 rounded-lg flex items-center text-sm font-medium transition-colors">
+                      <Mail size={14} className="mr-2" />
                       Contact
                     </button>
                   </div>
@@ -360,17 +563,18 @@ const People = () => {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Name
                   </th>
+
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Role
+                    Location
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Department
+                    Phone
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Skills
+                    {activeTab === 'partners' ? 'Website' : 'Skills'}
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Projects
+                    {activeTab === 'mentors' ? 'Experience' : activeTab === 'students' ? 'Projects' : 'Info'}
                   </th>
                   <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
@@ -378,47 +582,54 @@ const People = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredPeople.map(person => <tr key={person.id} className="hover:bg-gray-50">
+                {filteredPeople.map(person => <tr key={person.Timestamp} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10">
-                          <img className="h-10 w-10 rounded-full object-cover" src={person.image} alt={person.name} />
+                      <div className="space-y-1">
+                        <div className="text-sm font-medium text-gray-900">
+                          <Link to={`/people/${person.Timestamp}`} className="hover:text-blue-600">
+                            {getName(person).trim()}
+                          </Link>
                         </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            <Link to={`/people/${person.id}`} className="hover:text-blue-600">
-                              {person.name}
-                            </Link>
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {person.email}
-                          </div>
+                        <div className="text-sm text-gray-500 break-all">
+                          {getEmail(person)}
                         </div>
+                        {activeTab === 'partners' && 'Organization Name' in person && (
+                          <div className="text-xs text-blue-600 font-medium">
+                            🏢 {person['Organization Name']}
+                          </div>
+                        )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${person.role === 'Student' ? 'bg-blue-100 text-blue-800' : person.role === 'Mentor' ? 'bg-purple-100 text-purple-800' : 'bg-amber-100 text-amber-800'}`}>
-                        {person.role}
-                      </span>
+
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {getLocation(person)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {person.department}
+                      {getContactNumber(person) || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex flex-wrap gap-1">
-                        {person.skills.slice(0, 2).map((skill, index) => <span key={index} className="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded">
-                            {skill}
-                          </span>)}
-                        {person.skills.length > 2 && <span className="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded">
-                            +{person.skills.length - 2}
-                          </span>}
+                      <div className="text-sm text-gray-700">
+                        {activeTab === 'partners' && 'Website / LinkedIn Page ' in person && person['Website / LinkedIn Page '] ? (
+                          <a href={person['Website / LinkedIn Page ']} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-xs">
+                            Visit Website
+                          </a>
+                        ) : getSkills(person) ? (
+                          <span className="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded">
+                            {getSkills(person).length > 50 ? `${getSkills(person).substring(0, 50)}...` : getSkills(person)}
+                          </span>
+                        ) : (
+                          <span className="italic text-gray-400">None</span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {person.projects.length > 0 ? <div className="text-blue-600 hover:underline cursor-pointer">
-                          {person.projects[0]}
-                          {person.projects.length > 1 ? ` +${person.projects.length - 1}` : ''}
-                        </div> : <span className="italic text-gray-400">None</span>}
+                      {getProjectsOrExperience(person) ? (
+                        <div className={`${activeTab === 'students' ? 'text-blue-600' : 'text-green-600'} hover:underline cursor-pointer`}>
+                          {getProjectsOrExperience(person).length > 50 ? `${getProjectsOrExperience(person).substring(0, 50)}...` : getProjectsOrExperience(person)}
+                        </div>
+                      ) : (
+                        <span className="italic text-gray-400">None</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
@@ -439,8 +650,11 @@ const People = () => {
                   </tr>)}
               </tbody>
             </table>
-          </div>}
-        {/* Pagination */}
+          </div>
+        )}
+
+        {/* Pagination - only show if there's data */}
+        {!loading && !error && filteredPeople.length > 0 && (
         <div className="px-6 py-4 flex items-center justify-between border-t border-gray-200">
           <div className="flex-1 flex justify-between sm:hidden">
             <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
@@ -454,7 +668,7 @@ const People = () => {
             <div>
               <p className="text-sm text-gray-700">
                 Showing <span className="font-medium">1</span> to{' '}
-                <span className="font-medium">8</span> of{' '}
+                <span className="font-medium">{filteredPeople.length}</span> of{' '}
                 <span className="font-medium">{filteredPeople.length}</span>{' '}
                 results
               </p>
@@ -483,6 +697,7 @@ const People = () => {
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>;
 };

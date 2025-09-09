@@ -3,62 +3,7 @@ import { Calendar as CalendarIcon, Search, Filter, Plus, ChevronDown, ChevronLef
 import { Link } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 
-const eventsData = [{
-  id: '1',
-  title: 'AI Workshop',
-  date: '2023-07-11',
-  time: '10:00 AM - 12:00 PM',
-  location: 'Tech Lab 101',
-  capacity: 30,
-  registrations: 24,
-  description: 'Introduction to machine learning and AI concepts for beginners.',
-  organizer: 'Dr. James Wilson',
-  type: 'Workshop'
-}, {
-  id: '2',
-  title: 'Innovation Pitch Day',
-  date: '2023-07-15',
-  time: '2:00 PM - 5:00 PM',
-  location: 'Main Auditorium',
-  capacity: 100,
-  registrations: 65,
-  description: 'Teams present their project ideas to mentors and potential investors.',
-  organizer: 'Innovation Hub Team',
-  type: 'Presentation'
-}, {
-  id: '3',
-  title: 'Entrepreneurship Seminar',
-  date: '2023-07-18',
-  time: '3:00 PM - 4:30 PM',
-  location: 'Business Building, Room 305',
-  capacity: 50,
-  registrations: 42,
-  description: 'Learn about turning your innovation into a viable business.',
-  organizer: 'Prof. Maria Garcia',
-  type: 'Seminar'
-}, {
-  id: '4',
-  title: 'Hackathon: Sustainable Solutions',
-  date: '2023-07-22',
-  time: '9:00 AM - 9:00 PM',
-  location: 'Innovation Hub',
-  capacity: 60,
-  registrations: 48,
-  description: '12-hour hackathon focused on creating sustainable technology solutions.',
-  organizer: 'Sustainability Club & Innovation Hub',
-  type: 'Hackathon'
-}, {
-  id: '5',
-  title: 'Networking Mixer',
-  date: '2023-07-25',
-  time: '5:00 PM - 7:00 PM',
-  location: 'Student Center',
-  capacity: 80,
-  registrations: 35,
-  description: 'Connect with industry professionals, mentors, and fellow innovators.',
-  organizer: 'Career Services',
-  type: 'Networking'
-}];
+// Static data removed - now using Google Sheets data
 
 const excelSerialToDate = (serial: number): Date => {
   const utcDays = Math.floor(serial) - 25569;
@@ -84,6 +29,8 @@ interface GSheetEvent {
   endTime: string;                 // "Ending Time of the Event"
   location: string;                // "Location of the Event"
   flyer: string;                   // link or filename
+  id: string;                      // Generated ID for routing
+  type: string;                    // Same as eventName for compatibility
 }
 
 const SHEET_URL =
@@ -92,7 +39,7 @@ const SHEET_URL =
 const parseSheet = (wb: XLSX.WorkBook): GSheetEvent[] => {
   const ws  = wb.Sheets[wb.SheetNames[0]];
   const raw = XLSX.utils.sheet_to_json<Record<string, any>>(ws, { defval: '' });
-  return raw.map(row => {
+  return raw.map((row, index) => {
     const dateObj  = excelSerialToDate(Number(row['Date of the event']));
     const startObj = excelSerialToDate(Number(row['Starting Time of the Event']));
     const endObj   = excelSerialToDate(Number(row['Ending Time of the Event']));
@@ -105,11 +52,30 @@ const parseSheet = (wb: XLSX.WorkBook): GSheetEvent[] => {
       startTime:   startObj.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', hour12:true }),
       endTime:     endObj.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', hour12:true }),
       location:    row['Location of the Event'],
-      flyer:       row['Flyer']
+      flyer:       row['Flyer'],
+      id:          (index + 1).toString(), // Generate ID for routing
+      type:        row['Name of the Event'] || 'Workshop' // Use eventName as type for compatibility
     };
   });
 };
 
+// Helper function to get event type colors
+const getEventTypeColor = (type: string) => {
+  switch (type?.toLowerCase()) {
+    case 'workshop':
+      return 'bg-blue-100 text-blue-800';
+    case 'seminar':
+      return 'bg-green-100 text-green-800';
+    case 'hackathon':
+      return 'bg-purple-100 text-purple-800';
+    case 'presentation':
+      return 'bg-orange-100 text-orange-800';
+    case 'networking':
+      return 'bg-amber-100 text-amber-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+};
 
 const Events = () => {
   const [activeView, setActiveView] = useState('list');
@@ -128,6 +94,7 @@ useEffect(() => {
       const buf = await res.arrayBuffer();
       const wb  = XLSX.read(buf, { type: 'array' });
       setEvents(parseSheet(wb));
+      console.log("Event data",parseSheet(wb));
     } catch (err) {
       console.error('Error fetching sheet:', err);
     } finally {
@@ -147,18 +114,22 @@ if (loading) {
   );
 }
 
-// instead of eventsData, now use:
+// Filter events based on search term and event type
 const filteredEvents = events.filter(e => {
   const term = searchTerm.toLowerCase();
-  return (
+  const matchesSearch = (
     e.eventName.toLowerCase().includes(term) ||
     e.title.toLowerCase().includes(term) ||
     e.description.toLowerCase().includes(term) ||
     e.location.toLowerCase().includes(term)
   );
+
+  const matchesType = eventTypeFilter === 'All' || e.eventName === eventTypeFilter;
+
+  return matchesSearch && matchesType;
 });
 
-  const eventTypes = [...new Set(eventsData.map(event => event.type))];
+  const eventTypes = [...new Set(events.map(event => event.eventName))];
   const prevMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
   };
@@ -187,8 +158,8 @@ const filteredEvents = events.filter(e => {
     }
     // Add days of the month
     for (let day = 1; day <= daysInMonth; day++) {
-      const date = `₹{year}-₹{String(month + 1).padStart(2, '0')}-₹{String(day).padStart(2, '0')}`;
-      const dayEvents = eventsData.filter(event => event.date === date);
+      const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const dayEvents = events.filter(event => event.date === date);
       days.push({
         day,
         date,
@@ -220,13 +191,13 @@ const filteredEvents = events.filter(e => {
       </div>
       {/* View toggle */}
       <div className="flex border border-gray-200 rounded-md overflow-hidden">
-        <button className={`px-4 py-2 font-medium text-sm flex items-center ₹{activeView === 'list' ? 'bg-blue-50 text-blue-600' : 'bg-white text-gray-600'}`} onClick={() => setActiveView('list')}>
+        <button className={`px-4 py-2 font-medium text-sm flex items-center ${activeView === 'list' ? 'bg-blue-50 text-blue-600' : 'bg-white text-gray-600'}`} onClick={() => setActiveView('list')}>
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
           </svg>
           List
         </button>
-        <button className={`px-4 py-2 font-medium text-sm flex items-center ₹{activeView === 'calendar' ? 'bg-blue-50 text-blue-600' : 'bg-white text-gray-600'}`} onClick={() => setActiveView('calendar')}>
+        <button className={`px-4 py-2 font-medium text-sm flex items-center ${activeView === 'calendar' ? 'bg-blue-50 text-blue-600' : 'bg-white text-gray-600'}`} onClick={() => setActiveView('calendar')}>
           <CalendarIcon size={18} className="mr-1" />
           Calendar
         </button>
@@ -312,11 +283,11 @@ const filteredEvents = events.filter(e => {
                   <div className="flex flex-col md:flex-row md:items-center justify-between">
                     <div>
                       <div className="flex items-center">
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ₹{getEventTypeColor(event.type)}`}>
+                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getEventTypeColor(event.type)}`}>
                           {event.eventName}
                         </span>
                         <h3 className="ml-2 text-lg font-medium text-gray-900">
-                          <Link to={`/events/₹{event.id}`} className="hover:text-blue-600">
+                          <Link to={`/events/${event.id}?timestamp=${event.Timestamp}`} className="hover:text-blue-600">
                             {event.title}
                           </Link>
                         </h3>
@@ -352,7 +323,7 @@ const filteredEvents = events.filter(e => {
                         </span>
                       </div>
                       <div className="mt-2 flex space-x-2">
-                        <Link to={`/events/₹{event.id}`} className="px-3 py-1 bg-blue-100 text-blue-600 rounded-md text-sm">
+                        <Link to={`/events/${event.id}?timestamp=${event.Timestamp}`} className="px-3 py-1 bg-blue-100 text-blue-600 rounded-md text-sm">
                           View Details
                         </Link>
                         <button className="p-1 text-gray-400 hover:text-gray-600">
@@ -385,13 +356,13 @@ const filteredEvents = events.filter(e => {
                     {day}
                   </div>)}
               {/* Calendar days */}
-              {days.map((day, index) => <div key={index} className={`border border-gray-200 min-h-[100px] ₹{day.day ? 'bg-white' : 'bg-gray-50'}`}>
+              {days.map((day, index) => <div key={index} className={`border border-gray-200 min-h-[100px] ${day.day ? 'bg-white' : 'bg-gray-50'}`}>
                   {day.day && <div className="p-1">
                       <div className="text-right text-sm text-gray-500 p-1">
                         {day.day}
                       </div>
                       <div className="space-y-1">
-                        {day.events.map((event, eventIndex) => <Link key={eventIndex} to={`/events/₹{event.id}`} className={`block px-2 py-1 text-xs truncate rounded ₹{getEventTypeColor(event.type)} hover:opacity-80`}>
+                        {day.events.map((event, eventIndex) => <Link key={eventIndex} to={`/events/${event.id}?timestamp=${event.Timestamp}`} className={`block px-2 py-1 text-xs truncate rounded ${getEventTypeColor(event.type)} hover:opacity-80`}>
                             {event.title}
                           </Link>)}
                       </div>
